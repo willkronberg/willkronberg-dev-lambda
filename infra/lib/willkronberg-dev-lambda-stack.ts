@@ -15,7 +15,7 @@ import {
 } from "aws-cdk-lib/aws-route53";
 import { ApiGateway } from "aws-cdk-lib/aws-route53-targets";
 
-export class ApiStack extends cdk.Stack {
+export class WillkronbergDevLambdaStack extends cdk.Stack {
   public readonly api: RestApi;
   private readonly hostedZone: IHostedZone;
   private readonly certificate: DnsValidatedCertificate;

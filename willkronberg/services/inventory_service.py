@@ -4,7 +4,7 @@ from typing import List
 from aws_lambda_powertools import Logger
 from discogs_client import Client
 from discogs_client.exceptions import HTTPError
-from discogs_client.models import CollectionItemInstance, Release
+from discogs_client.models import Release
 from mypy_boto3_secretsmanager.type_defs import GetSecretValueResponseTypeDef
 
 from willkronberg.constants import INVALID_CONSUMER_TOKEN
@@ -33,21 +33,21 @@ class InventoryService:
             me = self.client.user("will.kronberg")
 
             releases: List[Release] = []
-            for folder in me.collection_folders:
-                item: CollectionItemInstance
-                for item in folder.releases.sort("added", "desc").page(0):
-                    release = item.release
-                    my_release = {
-                        "id": item.id,
-                        "date_added": item.date_added.strftime("%A %B %e, %Y"),
-                        "artists": release.fetch("artists"),
-                        "title": release.fetch("title"),
-                        "cover_image": release.fetch("cover_image"),
-                        "year": release.fetch("year"),
-                        "url": release.fetch("master_url"),
-                    }
+            folder = me.collection_folders[0]
 
-                    releases.append(my_release)
+            for item in folder.releases.sort("added", "desc"):
+                release = item.release
+                my_release = {
+                    "id": item.id,
+                    "date_added": item.date_added.strftime("%A %B %e, %Y"),
+                    "artists": release.fetch("artists"),
+                    "title": release.fetch("title"),
+                    "cover_image": release.fetch("thumb"),
+                    "year": release.fetch("year"),
+                    "url": release.fetch("master_url"),
+                }
+
+                releases.append(my_release)
 
             return releases
         except HTTPError as error:
