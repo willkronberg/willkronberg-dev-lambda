@@ -5,9 +5,10 @@
     "willkronberg-dev-lambda": "bin/willkronberg-dev-lambda.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npm run-script clean && tsc",
     "watch": "tsc -w",
     "test": "jest",
+    "clean": "rm -rf cdk.out",
     "cdk": "cdk"
   },
   "devDependencies": {

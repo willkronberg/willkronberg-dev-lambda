@@ -1,0 +1,7 @@
+aws-lambda-powertools
+aws-lambda-powertools[parser]
+aws-xray-sdk
+pydantic
+requests
+python3-discogs-client
+mypy-boto3-secretsmanager
