@@ -2,7 +2,7 @@
   "name": "willkronberg-dev-lambda",
   "version": "0.1.0",
   "bin": {
-    "willkronberg-dev-lambda": "bin/willkronberg-dev-lambda.js"
+    "willkronberg-dev-lambda": "infra/bin/willkronberg-dev-lambda.js"
   },
   "scripts": {
     "build": "npm run-script clean && tsc",

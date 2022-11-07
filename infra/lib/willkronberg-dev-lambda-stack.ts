@@ -14,6 +14,7 @@ import {
   RecordTarget,
 } from "aws-cdk-lib/aws-route53";
 import { ApiGateway } from "aws-cdk-lib/aws-route53-targets";
+import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
 
 export class WillkronbergDevLambdaStack extends cdk.Stack {
   public readonly api: RestApi;
@@ -23,23 +24,27 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const fn = new Function(this, "MainHandler", {
-      runtime: Runtime.PYTHON_3_9,
-      handler: "willkronberg.app.lambda_handler",
-      code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
-      timeout: Duration.seconds(30),
-      tracing: Tracing.ACTIVE,
-      memorySize: 512,
-    });
+    const getBlogArticlesHandler = new Function(
+      this,
+      "GetBlogArticlesHandler",
+      {
+        runtime: Runtime.PYTHON_3_9,
+        handler: "willkronberg.app.get_articles_handler",
+        code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
+        timeout: Duration.seconds(30),
+        tracing: Tracing.ACTIVE,
+        memorySize: 512,
+      }
+    );
 
-    if (fn.role) {
+    if (getBlogArticlesHandler.role) {
       const secret = secretsmanager.Secret.fromSecretNameV2(
         this,
-        "DiscogsSecret",
-        "DiscogsPersonalAccessKey"
+        "RapidApiSecret",
+        "Rapid-API-Key"
       );
 
-      fn.role.addToPrincipalPolicy(
+      getBlogArticlesHandler.role.addToPrincipalPolicy(
         new PolicyStatement({
           effect: Effect.ALLOW,
           actions: ["secretsmanager:GetSecretValue"],
@@ -47,7 +52,34 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
         })
       );
 
-      secret.grantRead(fn.role);
+      secret.grantRead(getBlogArticlesHandler.role);
+    }
+
+    const getCollectionHandler = new Function(this, "GetCollectionHandler", {
+      runtime: Runtime.PYTHON_3_9,
+      handler: "willkronberg.app.get_collection_handler",
+      code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
+      timeout: Duration.seconds(30),
+      tracing: Tracing.ACTIVE,
+      memorySize: 512,
+    });
+
+    if (getCollectionHandler.role) {
+      const secret = secretsmanager.Secret.fromSecretNameV2(
+        this,
+        "DiscogsSecret",
+        "DiscogsPersonalAccessKey"
+      );
+
+      getCollectionHandler.role.addToPrincipalPolicy(
+        new PolicyStatement({
+          effect: Effect.ALLOW,
+          actions: ["secretsmanager:GetSecretValue"],
+          resources: [secret.secretArn],
+        })
+      );
+
+      secret.grantRead(getCollectionHandler.role);
     }
 
     this.hostedZone = HostedZone.fromLookup(this, "StaticWebsiteHostedZone", {
@@ -57,6 +89,57 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
     this.certificate = new DnsValidatedCertificate(this, "SSLCertificate", {
       domainName: "api.willkronberg.dev",
       hostedZone: this.hostedZone,
+    });
+
+    const webACL = new CfnWebACL(this, "ApiWebACL", {
+      name: "ApiWebACL",
+      defaultAction: {
+        allow: {},
+      },
+      scope: "REGIONAL",
+      visibilityConfig: {
+        cloudWatchMetricsEnabled: true,
+        metricName: "MetricForApiACL",
+        sampledRequestsEnabled: true,
+      },
+      rules: [
+        {
+          name: "CRSRule",
+          priority: 0,
+          statement: {
+            managedRuleGroupStatement: {
+              name: "AWSManagedRulesCommonRuleSet",
+              vendorName: "AWS",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "API-ACL-CRS",
+            sampledRequestsEnabled: true,
+          },
+          overrideAction: {
+            none: {},
+          },
+        },
+        {
+          name: "ThrottlingBlanketRule",
+          priority: 1,
+          statement: {
+            rateBasedStatement: {
+              limit: 7000,
+              aggregateKeyType: "IP",
+            },
+          },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: "API-ACL-ThrottlingBlanket",
+            sampledRequestsEnabled: true,
+          },
+          action: {
+            block: {},
+          },
+        },
+      ],
     });
 
     this.api = new RestApi(this, "WillKronbergRestApi", {
@@ -80,19 +163,33 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
       },
     });
 
+    new CfnWebACLAssociation(this, "ApiWebACLAssociation", {
+      resourceArn: this.api.deploymentStage.stageArn,
+      webAclArn: webACL.attrArn,
+    });
+
+    const articles = this.api.root.addResource("articles");
+
+    articles.addMethod(
+      "GET",
+      new LambdaIntegration(getBlogArticlesHandler, {
+        allowTestInvoke: true,
+      })
+    );
+
     const records = this.api.root.addResource("records");
+
+    records.addMethod(
+      "GET",
+      new LambdaIntegration(getCollectionHandler, {
+        allowTestInvoke: true,
+      })
+    );
 
     new ARecord(this, "SiteAliasRecord", {
       recordName: "api.willkronberg.dev",
       target: RecordTarget.fromAlias(new ApiGateway(this.api)),
       zone: this.hostedZone,
     });
-
-    records.addMethod(
-      "GET",
-      new LambdaIntegration(fn, {
-        allowTestInvoke: true,
-      })
-    );
   }
 }
