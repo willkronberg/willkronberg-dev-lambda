@@ -75,7 +75,7 @@ def get_articles_handler(event: APIGatewayProxyEvent, context: LambdaContext):
 
     data: Dict[str, Any]
     try:
-        data = blog_service.get_user_articles("will-kronberg")
+        data = blog_service.get_feed()
     except requests.RequestException as e:
         logger.error(e)
 
