@@ -27,15 +27,15 @@ class InventoryService:
 
         self.client = Client("Wooly/0.1", user_token=self.user_token)
 
-    def get_inventory(self) -> List[Release]:
+    def get_inventory(self, pageIndex: int) -> List[Release]:
         """Retrieves the user's inventory"""
         try:
-            me = self.client.user("will.kronberg")
+            me = self.client.identity()
+
+            base_folder = me.collection_folders[0]
 
             releases: List[Release] = []
-            folder = me.collection_folders[0]
-
-            for item in folder.releases.sort("added", "desc"):
+            for item in base_folder.releases.sort("added", "desc"):
                 release = item.release
                 my_release = {
                     "id": item.id,
