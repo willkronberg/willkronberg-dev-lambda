@@ -27,7 +27,7 @@ class InventoryService:
 
         self.client = Client("Wooly/0.1", user_token=self.user_token)
 
-    def get_inventory(self, pageIndex: int) -> List[Release]:
+    def get_inventory(self, pageIndex: int = 0) -> List[Release]:
         """Retrieves the user's inventory"""
         try:
             me = self.client.identity()

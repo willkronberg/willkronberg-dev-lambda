@@ -5,7 +5,7 @@ import { Function, Runtime, Code, Tracing } from "aws-cdk-lib/aws-lambda";
 import * as path from "path";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Duration } from "aws-cdk-lib";
-import { Cors, LambdaIntegration, RestApi } from "aws-cdk-lib/aws-apigateway";
+import { Cors, LambdaIntegration, MethodLoggingLevel, RestApi } from "aws-cdk-lib/aws-apigateway";
 import { DnsValidatedCertificate } from "aws-cdk-lib/aws-certificatemanager";
 import {
   ARecord,
@@ -91,57 +91,6 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
       hostedZone: this.hostedZone,
     });
 
-    const webACL = new CfnWebACL(this, "ApiWebACL", {
-      name: "ApiWebACL",
-      defaultAction: {
-        allow: {},
-      },
-      scope: "REGIONAL",
-      visibilityConfig: {
-        cloudWatchMetricsEnabled: true,
-        metricName: "MetricForApiACL",
-        sampledRequestsEnabled: true,
-      },
-      rules: [
-        {
-          name: "CRSRule",
-          priority: 0,
-          statement: {
-            managedRuleGroupStatement: {
-              name: "AWSManagedRulesCommonRuleSet",
-              vendorName: "AWS",
-            },
-          },
-          visibilityConfig: {
-            cloudWatchMetricsEnabled: true,
-            metricName: "API-ACL-CRS",
-            sampledRequestsEnabled: true,
-          },
-          overrideAction: {
-            none: {},
-          },
-        },
-        {
-          name: "ThrottlingBlanketRule",
-          priority: 1,
-          statement: {
-            rateBasedStatement: {
-              limit: 7000,
-              aggregateKeyType: "IP",
-            },
-          },
-          visibilityConfig: {
-            cloudWatchMetricsEnabled: true,
-            metricName: "API-ACL-ThrottlingBlanket",
-            sampledRequestsEnabled: true,
-          },
-          action: {
-            block: {},
-          },
-        },
-      ],
-    });
-
     this.api = new RestApi(this, "WillKronbergRestApi", {
       restApiName: "WillKronbergRestApi",
       description: "runs all apis for frontend blog",
@@ -149,6 +98,12 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
       domainName: {
         domainName: "api.willkronberg.dev",
         certificate: this.certificate,
+      },
+      deployOptions: {
+        loggingLevel: MethodLoggingLevel.INFO,
+        metricsEnabled: true,
+        tracingEnabled: true,
+        dataTraceEnabled: true,
       },
       defaultCorsPreflightOptions: {
         allowCredentials: true,
@@ -161,11 +116,6 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
           "X-Api-Key",
         ],
       },
-    });
-
-    new CfnWebACLAssociation(this, "ApiWebACLAssociation", {
-      resourceArn: this.api.deploymentStage.stageArn,
-      webAclArn: webACL.attrArn,
     });
 
     const articles = this.api.root.addResource("articles");

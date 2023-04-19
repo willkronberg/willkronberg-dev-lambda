@@ -1,6 +1,3 @@
-from medium_api import Medium
-from typing import Dict
-
 import requests
 import atoma
 
