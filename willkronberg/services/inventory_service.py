@@ -37,6 +37,7 @@ class InventoryService:
             releases: List[Release] = []
             for item in base_folder.releases.sort("added", "desc"):
                 release = item.release
+
                 my_release = {
                     "id": item.id,
                     "date_added": item.date_added.strftime("%A %B %e, %Y"),

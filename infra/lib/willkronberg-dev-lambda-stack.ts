@@ -14,7 +14,6 @@ import {
   RecordTarget,
 } from "aws-cdk-lib/aws-route53";
 import { ApiGateway } from "aws-cdk-lib/aws-route53-targets";
-import { CfnWebACL, CfnWebACLAssociation } from "aws-cdk-lib/aws-wafv2";
 
 export class WillkronbergDevLambdaStack extends cdk.Stack {
   public readonly api: RestApi;
@@ -29,7 +28,7 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
       "GetBlogArticlesHandler",
       {
         runtime: Runtime.PYTHON_3_9,
-        handler: "willkronberg.app.get_articles_handler",
+        handler: "willkronberg.handlers.get_articles_handler.get_articles_handler",
         code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
         timeout: Duration.seconds(30),
         tracing: Tracing.ACTIVE,
@@ -37,27 +36,9 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
       }
     );
 
-    if (getBlogArticlesHandler.role) {
-      const secret = secretsmanager.Secret.fromSecretNameV2(
-        this,
-        "RapidApiSecret",
-        "Rapid-API-Key"
-      );
-
-      getBlogArticlesHandler.role.addToPrincipalPolicy(
-        new PolicyStatement({
-          effect: Effect.ALLOW,
-          actions: ["secretsmanager:GetSecretValue"],
-          resources: [secret.secretArn],
-        })
-      );
-
-      secret.grantRead(getBlogArticlesHandler.role);
-    }
-
     const getCollectionHandler = new Function(this, "GetCollectionHandler", {
       runtime: Runtime.PYTHON_3_9,
-      handler: "willkronberg.app.get_collection_handler",
+      handler: "willkronberg.handlers.get_collection_handler.get_collection_handler",
       code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
       timeout: Duration.seconds(30),
       tracing: Tracing.ACTIVE,

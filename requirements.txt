@@ -7,3 +7,6 @@ python3-discogs-client
 mypy-boto3-secretsmanager
 medium-api
 atoma
+boto3
+mypy
+types-requests
