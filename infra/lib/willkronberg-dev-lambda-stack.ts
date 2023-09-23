@@ -33,6 +33,10 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
         timeout: Duration.seconds(30),
         tracing: Tracing.ACTIVE,
         memorySize: 512,
+        environment: {
+          POWERTOOLS_SERVICE_NAME: "willkronberg.dev",
+          LOG_LEVEL: "INFO",
+        }
       }
     );
 
@@ -43,6 +47,10 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
       timeout: Duration.seconds(30),
       tracing: Tracing.ACTIVE,
       memorySize: 512,
+      environment: {
+        POWERTOOLS_SERVICE_NAME: "willkronberg.dev",
+        LOG_LEVEL: "INFO",
+      }
     });
 
     if (getCollectionHandler.role) {

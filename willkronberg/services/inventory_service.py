@@ -23,12 +23,11 @@ class InventoryService:
         self.user_token = secrets_service.get_user_token("DiscogsPersonalAccessKey")
 
         if not self.user_token:
-            logger.error(self.user_token)
             raise Exception("Missing User Token")
 
         self.client = Client("Wooly/0.1", user_token=self.user_token)
 
-    def get_inventory(self, pageIndex: int = 0) -> List[Release]:
+    def get_inventory(self) -> List[Release]:
         """Retrieves the user's inventory"""
         try:
             me = self.client.identity()
