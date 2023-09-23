@@ -32,7 +32,7 @@ def get_articles_handler(event: APIGatewayProxyEvent, context: LambdaContext):
     try:
         blog_service = BlogService()
         articles = blog_service.get_feed()
-        serialized_articles = [article.dict() for article in articles]
+        serialized_articles = [article.model_dump() for article in articles]
 
         return {
             "statusCode": 200,

@@ -1,7 +1,7 @@
 aws-lambda-powertools
 aws-lambda-powertools[parser]
 aws-xray-sdk
-pydantic
+pydantic==2.*
 requests
 python3-discogs-client
 mypy-boto3-secretsmanager
@@ -12,3 +12,4 @@ mypy
 types-requests
 coverage
 pytest
+moto

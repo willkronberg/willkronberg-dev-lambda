@@ -1,28 +1,25 @@
-import json
-from typing import Dict
-
 import boto3
 from aws_lambda_powertools import Logger
 from mypy_boto3_secretsmanager import SecretsManagerClient
+
+from willkronberg.models.secret_model import SecretModel
 
 logger = Logger(__name__)
 
 
 class SecretsService:
-    session: boto3.Session
-    client: SecretsManagerClient
+    __client__: SecretsManagerClient
 
     def __init__(self):
-        self.session = boto3.Session
-        self.client = boto3.client(
+        self.__client__ = boto3.client(
             service_name="secretsmanager",
             region_name="us-east-1",
         )
 
     def get_user_token(self, secret_name: str) -> str:
-        return self.get_secret_value(secret_name)["user_token"]
+        return self.__get_secret_value__(secret_name).user_token.get_secret_value()
 
-    def get_secret_value(self, secret_name: str) -> Dict[str, str]:
-        return json.loads(
-            self.client.get_secret_value(SecretId=secret_name)["SecretString"]
+    def __get_secret_value__(self, secret_name: str) -> SecretModel:
+        return SecretModel.model_validate_json(
+            self.__client__.get_secret_value(SecretId=secret_name)["SecretString"]
         )

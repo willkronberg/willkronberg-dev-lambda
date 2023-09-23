@@ -20,9 +20,9 @@ class BlogService:
         for item in feed.items:
             description = item.content_encoded.split("<p>")[1].split("</p>")[0]
 
-            # Truncate description if over 50 characters
+            # Truncate description if over 75 characters
             description = (
-                (description[:75] + "...") if len(description) > 75 else description
+                (description[:72] + "...") if len(description) > 75 else description
             )
 
             article = ArticleModel(
