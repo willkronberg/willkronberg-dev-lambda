@@ -10,3 +10,4 @@ atoma
 boto3
 mypy
 types-requests
+coverage

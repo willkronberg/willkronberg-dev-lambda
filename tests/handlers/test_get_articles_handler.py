@@ -38,6 +38,7 @@ def test_get_articles_handler_success(lambda_context: lambda_context):
     assert len(response_body) == 1
     assert type(response_body[0]) == dict
     assert response_body[0].get("id") == "test-id"
+    assert response.get("statusCode") == 200
 
 
 @patch("willkronberg.handlers.get_articles_handler.BlogService", blog_service_mock)
@@ -57,3 +58,4 @@ def test_get_articles_handler_failure(lambda_context: lambda_context):
     response_body = json.loads(response.get("body", {}))
 
     assert response_body["message"] == "An unexpected error has occurred."
+    assert response.get("statusCode") == 500

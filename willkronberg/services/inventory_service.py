@@ -1,10 +1,9 @@
-import traceback
 from typing import List
 
 from aws_lambda_powertools import Logger
 from discogs_client import Client
 from discogs_client.exceptions import HTTPError
-from discogs_client.models import Release
+from discogs_client.models import CollectionItemInstance, Release
 from mypy_boto3_secretsmanager.type_defs import GetSecretValueResponseTypeDef
 
 from willkronberg.constants import INVALID_CONSUMER_TOKEN
@@ -35,6 +34,7 @@ class InventoryService:
             base_folder = me.collection_folders[0]
 
             releases: List[Release] = []
+            item: CollectionItemInstance
             for item in base_folder.releases.sort("added", "desc"):
                 release = item.release
 
@@ -55,8 +55,11 @@ class InventoryService:
             if error.msg == INVALID_CONSUMER_TOKEN:
                 raise MissingDiscogsConsumerToken(error)
             else:
-                traceback.print_tb(error.__traceback__)
+                logger.exception(error, stack_info=True)
                 raise error
+        except Exception as error:
+            logger.exception(error, stack_info=True)
+            raise error
 
 
 class MissingDiscogsConsumerToken(Exception):

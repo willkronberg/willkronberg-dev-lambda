@@ -45,7 +45,7 @@ def get_collection_handler(event: APIGatewayProxyEvent, context: LambdaContext):
             },
         }
     except Exception as e:
-        logger.error(e)
+        logger.exception(e, stack_info=True)
 
         return {
             "statusCode": 500,
