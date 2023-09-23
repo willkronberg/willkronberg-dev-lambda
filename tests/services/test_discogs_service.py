@@ -1,78 +1,89 @@
-import json
-
+from typing import Any, Dict
 from unittest.mock import Mock, patch
 
-from willkronberg.handlers.get_collection_handler import (
-    get_collection_handler,
-)
-from tests.fixtures.lambda_context import lambda_context
-from willkronberg.models.discogs_model import (
-    GetCollectionPaginatedResponse,
-    PaginationResponse,
-    PaginationResponseUrls,
-    ReleaseInstance,
-)
+import pytest
+from pydantic import ValidationError
 
-get_collection_mock = Mock()
-discogs_service_mock = Mock()
-discogs_service_mock().get_collection = get_collection_mock
+from willkronberg.services.discogs_service import DiscogsService
 
 
-@patch(
-    "willkronberg.handlers.get_collection_handler.DiscogsService",
-    discogs_service_mock,
-)
-def test_get_collection_handler_success_no_releases(
-    lambda_context: lambda_context,
-):
+class GetResponse:
+    data: Dict[str, Any]
+
+    def __init__(self, data):
+        self.data = data
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self.data
+
+
+secrets_mock = Mock()
+
+get_mock = Mock()
+requests_mock = Mock()
+requests_mock.get = get_mock
+
+
+@pytest.fixture(autouse=True)
+def run_around_tests():
+    secrets_mock.reset_mock()
+    get_mock.reset_mock()
+
+    yield
+
+
+@patch("willkronberg.services.discogs_service.SecretsService", secrets_mock)
+@patch("willkronberg.services.discogs_service.requests", requests_mock)
+def test_get_collection_no_releases():
+    get_mock.return_value = GetResponse(
+        data={
+            "pagination": {
+                "page": 1,
+                "pages": 1,
+                "per_page": 1000,
+                "items": 0,
+                "urls": {
+                    "last": "https://test-last-url.com",
+                    "next": "https://test-next-url.com",
+                },
+            },
+            "releases": [],
+        }
+    )
+
     response = None
     error = None
 
-    get_collection_mock.return_value = GetCollectionPaginatedResponse(
-        pagination=PaginationResponse(
-            items=0,
-            page=1,
-            pages=1,
-            per_page=1000,
-            urls=PaginationResponseUrls(),
-        ),
-        releases=[],
-    )
-
     try:
-        response = get_collection_handler({}, lambda_context)
+        discogs_service = DiscogsService()
+        response = discogs_service.get_collection()
     except Exception as e:
         error = e
 
     assert error is None
-
-    response_body = json.loads(response.get("body", {})).get("data")
-
-    assert type(response_body) == list
-    assert len(response_body) == 0
-    assert response.get("statusCode") == 200
+    assert response.pagination.page == 1
+    assert len(response.releases) == 0
 
 
-@patch(
-    "willkronberg.handlers.get_collection_handler.DiscogsService",
-    discogs_service_mock,
-)
-def test_get_collection_handler_success_with_releases(
-    lambda_context: lambda_context,
-):
-    response = None
-    error = None
-
-    get_collection_mock.return_value = GetCollectionPaginatedResponse(
-        pagination=PaginationResponse(
-            items=0,
-            page=1,
-            pages=1,
-            per_page=1000,
-            urls=PaginationResponseUrls(),
-        ),
-        releases=[
-            ReleaseInstance.model_validate(
+@patch("willkronberg.services.discogs_service.SecretsService", secrets_mock)
+@patch("willkronberg.services.discogs_service.requests", requests_mock)
+def test_get_collection_with_valid_release():
+    get_mock.return_value = GetResponse(
+        data={
+            "pagination": {
+                "page": 1,
+                "pages": 1,
+                "per_page": 1000,
+                "items": 1,
+                "urls": {
+                    "last": "https://test-last-url.com",
+                    "next": "https://test-next-url.com",
+                },
+            },
+            "releases": [
                 {
                     "id": 27601134,
                     "instance_id": 1461317893,
@@ -127,43 +138,51 @@ def test_get_collection_handler_success_with_releases(
                     },
                     "folder_id": 1,
                 }
-            )
-        ],
+            ],
+        }
     )
 
-    try:
-        response = get_collection_handler({}, lambda_context)
-    except Exception as e:
-        error = e
-
-    assert error is None
-
-    response_body = json.loads(response.get("body", {})).get("data")
-
-    assert type(response_body) == list
-    assert len(response_body) == 1
-    assert response.get("statusCode") == 200
-
-
-@patch(
-    "willkronberg.handlers.get_collection_handler.DiscogsService",
-    discogs_service_mock,
-)
-def test_get_collection_handler_error(lambda_context: lambda_context):
     response = None
     error = None
 
-    get_collection_mock.side_effect = Exception("test-exception")
-
     try:
-        response = get_collection_handler({}, lambda_context)
+        discogs_service = DiscogsService()
+        response = discogs_service.get_collection()
     except Exception as e:
         error = e
 
     assert error is None
+    assert response.pagination.page == 1
+    assert len(response.releases) == 1
 
-    response_body = json.loads(response.get("body", {})).get("message")
 
-    assert type(response_body) == str
-    assert response_body == "An unexpected error has occurred."
-    assert response.get("statusCode") == 500
+@patch("willkronberg.services.discogs_service.SecretsService", secrets_mock)
+@patch("willkronberg.services.discogs_service.requests", requests_mock)
+def test_get_collection_with_invalid_release():
+    get_mock.return_value = GetResponse(
+        data={
+            "pagination": {
+                "page": 1,
+                "pages": 1,
+                "per_page": 1000,
+                "items": 1,
+                "urls": {
+                    "last": "https://test-last-url.com",
+                    "next": "https://test-next-url.com",
+                },
+            },
+            "releases": [{id: "test-id"}],
+        }
+    )
+
+    response = None
+    error = None
+
+    try:
+        discogs_service = DiscogsService()
+        response = discogs_service.get_collection()
+    except Exception as e:
+        error = e
+
+    assert type(error) is ValidationError
+    assert response is None

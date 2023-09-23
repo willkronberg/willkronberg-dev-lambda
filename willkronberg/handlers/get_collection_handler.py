@@ -1,4 +1,6 @@
 import json
+from datetime import datetime
+from typing import Any, Dict, List
 
 from aws_lambda_powertools import Logger, Tracer
 from aws_lambda_powertools.utilities.data_classes import (
@@ -7,7 +9,8 @@ from aws_lambda_powertools.utilities.data_classes import (
 )
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
-from willkronberg.services.inventory_service import InventoryService
+from willkronberg.models.record_model import RecordRelease
+from willkronberg.services.discogs_service import DiscogsService
 
 logger = Logger()
 tracer = Tracer()
@@ -30,13 +33,28 @@ def get_collection_handler(event: APIGatewayProxyEvent, context: LambdaContext):
     """
 
     try:
-        inventory_service = InventoryService()
-        data = inventory_service.get_inventory()
+        discogs_service = DiscogsService()
+        data = discogs_service.get_collection()
+
+        releases: List[Dict[str, Any]] = []
+        for item in data.releases:
+            date_added = datetime.fromisoformat(item.date_added)
+
+            release = RecordRelease(
+                id=item.id,
+                artists=item.basic_information.artists,
+                cover_image=item.basic_information.thumb,
+                date_added=date_added.strftime("%A %B %e, %Y"),
+                title=item.basic_information.title,
+                url=item.basic_information.master_url,
+                year=item.basic_information.year,
+            )
+            releases.append(release.model_dump())
 
         return {
             "statusCode": 200,
             "isBase64Encoded": False,
-            "body": json.dumps({"data": data}),
+            "body": json.dumps({"data": releases}),
             "headers": {
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Credentials": True,
