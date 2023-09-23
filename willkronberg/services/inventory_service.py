@@ -4,9 +4,11 @@ from aws_lambda_powertools import Logger
 from discogs_client import Client
 from discogs_client.exceptions import HTTPError
 from discogs_client.models import CollectionItemInstance, Release
-from mypy_boto3_secretsmanager.type_defs import GetSecretValueResponseTypeDef
 
 from willkronberg.constants import INVALID_CONSUMER_TOKEN
+from willkronberg.exceptions.missing_discogs_consumer_token import (
+    MissingDiscogsConsumerToken,
+)
 from willkronberg.services.secrets_service import SecretsService
 
 logger = Logger(__name__)
@@ -14,7 +16,7 @@ logger = Logger(__name__)
 
 class InventoryService:
     client: Client
-    secret: GetSecretValueResponseTypeDef
+    secret: str
 
     def __init__(self):
         secrets_service = SecretsService()
@@ -60,11 +62,3 @@ class InventoryService:
         except Exception as error:
             logger.exception(error, stack_info=True)
             raise error
-
-
-class MissingDiscogsConsumerToken(Exception):
-    message: str
-
-    def __init__(self, error: HTTPError):
-        print(error)
-        self.message = error.msg

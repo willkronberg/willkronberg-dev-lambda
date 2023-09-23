@@ -27,7 +27,7 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
       this,
       "GetBlogArticlesHandler",
       {
-        runtime: Runtime.PYTHON_3_9,
+        runtime: Runtime.PYTHON_3_11,
         handler: "willkronberg.handlers.get_articles_handler.get_articles_handler",
         code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
         timeout: Duration.seconds(30),
@@ -37,7 +37,7 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
     );
 
     const getCollectionHandler = new Function(this, "GetCollectionHandler", {
-      runtime: Runtime.PYTHON_3_9,
+      runtime: Runtime.PYTHON_3_11,
       handler: "willkronberg.handlers.get_collection_handler.get_collection_handler",
       code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
       timeout: Duration.seconds(30),

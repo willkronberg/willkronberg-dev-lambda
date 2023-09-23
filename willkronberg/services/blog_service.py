@@ -12,8 +12,8 @@ logger = Logger(__name__)
 
 class BlogService:
     def get_feed(self) -> List[ArticleModel]:
-        feed_url = "https://medium.com/feed/@will-kronberg"
-        response = requests.get(feed_url)
+        response = requests.get("https://medium.com/feed/@will-kronberg")
+        response.raise_for_status()
         feed = atoma.parse_rss_bytes(response.content)
 
         articles = []
