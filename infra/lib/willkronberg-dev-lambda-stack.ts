@@ -6,7 +6,7 @@ import * as path from "path";
 import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Duration } from "aws-cdk-lib";
 import { Cors, LambdaIntegration, MethodLoggingLevel, RestApi } from "aws-cdk-lib/aws-apigateway";
-import { DnsValidatedCertificate } from "aws-cdk-lib/aws-certificatemanager";
+import { Certificate, ValidationMethod } from "aws-cdk-lib/aws-certificatemanager";
 import {
   ARecord,
   HostedZone,
@@ -18,7 +18,7 @@ import { ApiGateway } from "aws-cdk-lib/aws-route53-targets";
 export class WillkronbergDevLambdaStack extends cdk.Stack {
   public readonly api: RestApi;
   private readonly hostedZone: IHostedZone;
-  private readonly certificate: DnsValidatedCertificate;
+  private readonly certificate: Certificate;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -75,9 +75,14 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
       domainName: "willkronberg.dev",
     });
 
-    this.certificate = new DnsValidatedCertificate(this, "SSLCertificate", {
+    this.certificate = new Certificate(this, "SSLCertificate", {
       domainName: "api.willkronberg.dev",
-      hostedZone: this.hostedZone,
+      validation: {
+        method: ValidationMethod.DNS,
+        props: {
+          hostedZone: this.hostedZone,
+        }
+      }
     });
 
     this.api = new RestApi(this, "WillKronbergRestApi", {
