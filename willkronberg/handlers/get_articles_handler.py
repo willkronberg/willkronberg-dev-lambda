@@ -13,7 +13,7 @@ tracer = Tracer()
 
 
 @logger.inject_lambda_context(log_event=True)
-@tracer.capture_lambda_handler(capture_response=False)
+@tracer.capture_lambda_handler
 @event_source(data_class=APIGatewayProxyEvent)
 def get_articles_handler(event: APIGatewayProxyEvent, context: LambdaContext):
     """Returns a list of articles from my blog.

@@ -6,9 +6,5 @@ requests
 mypy-boto3-secretsmanager
 atoma
 boto3
-mypy
 types-requests
-coverage
-pytest
-moto
-flake8
+retry

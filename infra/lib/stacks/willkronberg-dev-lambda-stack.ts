@@ -1,10 +1,6 @@
-import * as cdk from "aws-cdk-lib";
+import { Stack, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
-import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
-import { Function, Runtime, Code, Tracing } from "aws-cdk-lib/aws-lambda";
-import * as path from "path";
-import { Effect, PolicyStatement } from "aws-cdk-lib/aws-iam";
-import { Duration } from "aws-cdk-lib";
+import { ISecret, Secret } from "aws-cdk-lib/aws-secretsmanager";
 import { Cors, LambdaIntegration, MethodLoggingLevel, RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Certificate, ValidationMethod } from "aws-cdk-lib/aws-certificatemanager";
 import {
@@ -14,64 +10,37 @@ import {
   RecordTarget,
 } from "aws-cdk-lib/aws-route53";
 import { ApiGateway } from "aws-cdk-lib/aws-route53-targets";
+import { WoolyLambdaFunction } from "../constructs/lambda-function";
 
-export class WillkronbergDevLambdaStack extends cdk.Stack {
+export class WillkronbergDevLambdaStack extends Stack {
   public readonly api: RestApi;
-  private readonly hostedZone: IHostedZone;
+  public readonly getBlogArticlesHandler: WoolyLambdaFunction;
+  public readonly getCollectionHandler: WoolyLambdaFunction;
+  public readonly discogsSecret: ISecret;
   private readonly certificate: Certificate;
+  private readonly hostedZone: IHostedZone;
 
-  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const getBlogArticlesHandler = new Function(
+    this.getBlogArticlesHandler = new WoolyLambdaFunction(this, "GetBlogArticlesHandler", {
+      name: "GetBlogArticlesHandler",
+      handler: "willkronberg.handlers.get_articles_handler.get_articles_handler",
+    })
+
+    this.discogsSecret = Secret.fromSecretNameV2(
       this,
-      "GetBlogArticlesHandler",
-      {
-        runtime: Runtime.PYTHON_3_11,
-        handler: "willkronberg.handlers.get_articles_handler.get_articles_handler",
-        code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
-        timeout: Duration.seconds(30),
-        tracing: Tracing.ACTIVE,
-        memorySize: 512,
-        environment: {
-          POWERTOOLS_SERVICE_NAME: "willkronberg.dev",
-          LOG_LEVEL: "INFO",
-        }
-      }
-    );
+      "DiscogsSecret",
+      "DiscogsPersonalAccessKey"
+    )
 
-    const getCollectionHandler = new Function(this, "GetCollectionHandler", {
-      runtime: Runtime.PYTHON_3_11,
+    this.getCollectionHandler = new WoolyLambdaFunction(this, "GetCollectionHandler", {
+      name: "GetCollectionHandler",
       handler: "willkronberg.handlers.get_collection_handler.get_collection_handler",
-      code: Code.fromDockerBuild(path.join(__dirname, "..", "..")),
-      timeout: Duration.seconds(30),
-      tracing: Tracing.ACTIVE,
-      memorySize: 512,
-      environment: {
-        POWERTOOLS_SERVICE_NAME: "willkronberg.dev",
-        LOG_LEVEL: "INFO",
-      }
-    });
+      secrets: [this.discogsSecret]
+    })
 
-    if (getCollectionHandler.role) {
-      const secret = secretsmanager.Secret.fromSecretNameV2(
-        this,
-        "DiscogsSecret",
-        "DiscogsPersonalAccessKey"
-      );
-
-      getCollectionHandler.role.addToPrincipalPolicy(
-        new PolicyStatement({
-          effect: Effect.ALLOW,
-          actions: ["secretsmanager:GetSecretValue"],
-          resources: [secret.secretArn],
-        })
-      );
-
-      secret.grantRead(getCollectionHandler.role);
-    }
-
-    this.hostedZone = HostedZone.fromLookup(this, "StaticWebsiteHostedZone", {
+    this.hostedZone = HostedZone.fromLookup(this, "RootHostedZone", {
       domainName: "willkronberg.dev",
     });
 
@@ -116,7 +85,7 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
 
     articles.addMethod(
       "GET",
-      new LambdaIntegration(getBlogArticlesHandler, {
+      new LambdaIntegration(this.getBlogArticlesHandler.lambdaFunction, {
         allowTestInvoke: true,
       })
     );
@@ -125,7 +94,7 @@ export class WillkronbergDevLambdaStack extends cdk.Stack {
 
     records.addMethod(
       "GET",
-      new LambdaIntegration(getCollectionHandler, {
+      new LambdaIntegration(this.getCollectionHandler.lambdaFunction, {
         allowTestInvoke: true,
       })
     );

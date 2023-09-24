@@ -1,0 +1,5 @@
+mypy
+coverage
+pytest
+moto
+flake8

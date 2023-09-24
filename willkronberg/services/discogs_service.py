@@ -52,7 +52,7 @@ class DiscogsService:
             params (Dict[str, str], optional): The parameters to include in the request. Defaults to {}.
 
         Returns:
-            Any: A JSON representation of the response received from the Discogs API.
+            Json: A JSON representation of the response received from the Discogs API.
         """
         request_params = {"token": self.__user_token__.get_secret_value(), **params}
 
