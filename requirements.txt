@@ -8,3 +8,4 @@ atoma
 boto3
 types-requests
 retry
+types-retry

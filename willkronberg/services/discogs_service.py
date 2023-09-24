@@ -44,7 +44,9 @@ class DiscogsService:
 
         return GetCollectionPaginatedResponse.model_validate(data)
 
-    def __get__(self, url_path: str, params: Dict[str, str] = {}) -> Json:
+    def __get__(
+        self, url_path: str, params: Dict[str, str] = {}
+    ) -> Json[GetCollectionPaginatedResponse]:
         """Makes authenticated HTTP Requests to the Discogs API.
 
         Args:

@@ -3,3 +3,4 @@ coverage
 pytest
 moto
 flake8
+black

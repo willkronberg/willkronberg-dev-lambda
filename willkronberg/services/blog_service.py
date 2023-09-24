@@ -1,7 +1,7 @@
 from typing import List
 
 from atoma import parse_rss_bytes
-from atoma.rss import RSSChannel
+from atoma.rss import RSSChannel, RSSItem
 from aws_lambda_powertools import Logger, Tracer
 from requests import Response, get
 from retry import retry
@@ -65,24 +65,20 @@ class BlogService:
             List[Article]: A list of articles retrieved from Medium.
         """
 
-        articles = []
+        return [self.__build_article__(item) for item in feed.items]
 
-        for item in feed.items:
-            description = item.content_encoded.split("<p>")[1].split("</p>")[0]
+    def __build_article__(self, item: RSSItem) -> Article:
+        description = item.content_encoded.split("<p>")[1].split("</p>")[0]
 
-            # Truncate description if over 75 characters
-            description = (
-                (description[:72] + "...") if len(description) > 75 else description
-            )
+        # Truncate description if over 75 characters
+        description = (
+            (description[:72] + "...") if len(description) > 75 else description
+        )
 
-            article = Article(
-                id=str(item.guid),
-                title=str(item.title),
-                description=description,
-                link=str(item.link),
-                published_date=item.pub_date.isoformat(),
-            )
-
-            articles.append(article)
-
-        return articles
+        return Article(
+            id=str(item.guid),
+            title=str(item.title),
+            description=description,
+            link=str(item.link),
+            published_date=item.pub_date.isoformat(),
+        )

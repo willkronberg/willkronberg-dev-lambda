@@ -1,18 +1,9 @@
 import json
-
 from unittest.mock import Mock, patch
 
-from willkronberg.handlers.get_articles_handler import get_articles_handler
-from willkronberg.models.article import Article
+from tests.fixtures.articles import test_article
 from tests.fixtures.lambda_context import lambda_context
-
-test_article = Article(
-    id="test-id",
-    title="test-title",
-    description="test-description",
-    link="https://test-link",
-    published_date="2023-09-21",
-)
+from willkronberg.handlers.get_articles_handler import get_articles_handler
 
 get_articles_mock = Mock()
 blog_service_mock = Mock()
@@ -20,7 +11,9 @@ blog_service_mock().get_feed = get_articles_mock
 
 
 @patch("willkronberg.handlers.get_articles_handler.BlogService", blog_service_mock)
-def test_get_articles_handler_success(lambda_context: lambda_context):
+def test_get_articles_handler_success(
+    lambda_context: lambda_context, test_article: test_article
+):
     response = None
     error = None
 
