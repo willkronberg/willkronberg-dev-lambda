@@ -1,5 +1,5 @@
 from pydantic import BaseModel, SecretStr
 
 
-class SecretModel(BaseModel):
+class Secret(BaseModel):
     user_token: SecretStr

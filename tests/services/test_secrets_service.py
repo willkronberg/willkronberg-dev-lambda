@@ -25,7 +25,8 @@ def test_get_user_token_success():
         error = e
 
     assert error is None
-    assert response == "test-secret-value"
+    assert response.get_secret_value() == "test-secret-value"
+    assert str(response) == "**********"
 
 
 @mock_secretsmanager

@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-from willkronberg.models.discogs_model import Artist
+from willkronberg.models.discogs import Artist
 
 
 class RecordRelease(BaseModel):

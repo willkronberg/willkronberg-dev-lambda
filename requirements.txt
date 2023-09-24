@@ -3,9 +3,7 @@ aws-lambda-powertools[parser]
 aws-xray-sdk
 pydantic==2.*
 requests
-python3-discogs-client
 mypy-boto3-secretsmanager
-medium-api
 atoma
 boto3
 mypy
@@ -13,3 +11,4 @@ types-requests
 coverage
 pytest
 moto
+flake8

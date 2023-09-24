@@ -3,10 +3,10 @@ import json
 from unittest.mock import Mock, patch
 
 from willkronberg.handlers.get_articles_handler import get_articles_handler
-from willkronberg.models.article_model import ArticleModel
+from willkronberg.models.article import Article
 from tests.fixtures.lambda_context import lambda_context
 
-test_article = ArticleModel(
+test_article = Article(
     id="test-id",
     title="test-title",
     description="test-description",

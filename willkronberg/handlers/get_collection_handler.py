@@ -9,7 +9,7 @@ from aws_lambda_powertools.utilities.data_classes import (
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
 from willkronberg.helpers import response_helpers
-from willkronberg.models.record_model import RecordRelease
+from willkronberg.models.record import RecordRelease
 from willkronberg.services.discogs_service import DiscogsService
 
 logger = Logger()

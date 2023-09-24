@@ -6,7 +6,7 @@ from willkronberg.handlers.get_collection_handler import (
     get_collection_handler,
 )
 from tests.fixtures.lambda_context import lambda_context
-from willkronberg.models.discogs_model import (
+from willkronberg.models.discogs import (
     GetCollectionPaginatedResponse,
     PaginationResponse,
     PaginationResponseUrls,
