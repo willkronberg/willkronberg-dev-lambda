@@ -1,11 +1,10 @@
-import requests
-import atoma
 from typing import List
 
+from atoma import parse_rss_bytes
 from aws_lambda_powertools import Logger
+from requests import get
 
 from willkronberg.models.article import Article
-
 
 logger = Logger(__name__)
 
@@ -19,9 +18,9 @@ class BlogService:
         Returns:
             List[ArticleModel]: A list of articles from my feed.
         """
-        response = requests.get("https://medium.com/feed/@will-kronberg")
+        response = get("https://medium.com/feed/@will-kronberg")
         response.raise_for_status()
-        feed = atoma.parse_rss_bytes(response.content)
+        feed = parse_rss_bytes(response.content)
 
         articles = []
         for item in feed.items:

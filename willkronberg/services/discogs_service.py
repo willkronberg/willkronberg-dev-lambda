@@ -1,8 +1,8 @@
-from typing import Any, Dict
+from typing import Dict
 
 import requests
 from aws_lambda_powertools import Logger
-from pydantic import SecretStr
+from pydantic import Json, SecretStr
 
 from willkronberg.models.discogs import GetCollectionPaginatedResponse
 from willkronberg.services.secrets_service import SecretsService
@@ -44,7 +44,7 @@ class DiscogsService:
 
         return GetCollectionPaginatedResponse.model_validate(data)
 
-    def __get__(self, url_path: str, params: Dict[str, str] = {}) -> Any:
+    def __get__(self, url_path: str, params: Dict[str, str] = {}) -> Json:
         """Makes authenticated HTTP Requests to the Discogs API.
 
         Args:

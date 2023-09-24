@@ -1,9 +1,9 @@
-from unittest.mock import Mock, patch
 from datetime import datetime
-
-from willkronberg.services.blog_service import BlogService
+from unittest.mock import Mock, patch
 
 from atoma.rss import RSSItem
+
+from willkronberg.services.blog_service import BlogService
 
 
 class GetResponse:
@@ -14,17 +14,11 @@ class GetResponse:
 
 
 get_mock = Mock()
-requests_mock = Mock()
-requests_mock.get = get_mock
-
-
 parse_rss_bytes_mock = Mock()
-atoma_mock = Mock()
-atoma_mock.parse_rss_bytes = parse_rss_bytes_mock
 
 
-@patch("willkronberg.services.blog_service.requests", requests_mock)
-@patch("willkronberg.services.blog_service.atoma", atoma_mock)
+@patch("willkronberg.services.blog_service.get", get_mock)
+@patch("willkronberg.services.blog_service.parse_rss_bytes", parse_rss_bytes_mock)
 def test_get_feed_no_articles():
     class ParseRSSFeedResponse:
         items = []
@@ -47,8 +41,8 @@ def test_get_feed_no_articles():
     assert response == []
 
 
-@patch("willkronberg.services.blog_service.requests", requests_mock)
-@patch("willkronberg.services.blog_service.atoma", atoma_mock)
+@patch("willkronberg.services.blog_service.get", get_mock)
+@patch("willkronberg.services.blog_service.parse_rss_bytes", parse_rss_bytes_mock)
 def test_get_feed_with_articles():
     class ParseRSSFeedResponse:
         items = [
@@ -88,8 +82,8 @@ def test_get_feed_with_articles():
     assert type(response[0].published_date) == str
 
 
-@patch("willkronberg.services.blog_service.requests", requests_mock)
-@patch("willkronberg.services.blog_service.atoma", atoma_mock)
+@patch("willkronberg.services.blog_service.get", get_mock)
+@patch("willkronberg.services.blog_service.parse_rss_bytes", parse_rss_bytes_mock)
 def test_get_feed_with_articles_bad_id():
     class ParseRSSFeedResponse:
         items = [
@@ -128,8 +122,8 @@ def test_get_feed_with_articles_bad_id():
     assert response[0].id == "1"
 
 
-@patch("willkronberg.services.blog_service.requests", requests_mock)
-@patch("willkronberg.services.blog_service.atoma", atoma_mock)
+@patch("willkronberg.services.blog_service.get", get_mock)
+@patch("willkronberg.services.blog_service.parse_rss_bytes", parse_rss_bytes_mock)
 def test_get_feed_with_articles_long_description():
     class ParseRSSFeedResponse:
         items = [
