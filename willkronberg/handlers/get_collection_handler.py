@@ -1,4 +1,3 @@
-import json
 from datetime import datetime
 from typing import Any, Dict, List
 
@@ -9,6 +8,7 @@ from aws_lambda_powertools.utilities.data_classes import (
 )
 from aws_lambda_powertools.utilities.typing import LambdaContext
 
+from willkronberg.helpers import response_helpers
 from willkronberg.models.record_model import RecordRelease
 from willkronberg.services.discogs_service import DiscogsService
 
@@ -20,7 +20,7 @@ tracer = Tracer()
 @tracer.capture_lambda_handler(capture_response=False)
 @event_source(data_class=APIGatewayProxyEvent)
 def get_collection_handler(event: APIGatewayProxyEvent, context: LambdaContext):
-    """Retrieves a list of releases from Discogs that I own
+    """Returns a list of releases from Discogs that I own
 
     Parameters
     ----------
@@ -51,28 +51,10 @@ def get_collection_handler(event: APIGatewayProxyEvent, context: LambdaContext):
             )
             releases.append(release.model_dump())
 
-        return {
-            "statusCode": 200,
-            "isBase64Encoded": False,
-            "body": json.dumps({"data": releases}),
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Credentials": True,
-                "Access-Control-Allow-Headers": "authorization,content-type",
-                "Content-Type": "application/json",
-            },
-        }
+        return response_helpers.generate_success_response(releases)
     except Exception as e:
         logger.exception(e, stack_info=True)
 
-        return {
-            "statusCode": 500,
-            "isBase64Encoded": False,
-            "body": json.dumps({"message": "An unexpected error has occurred."}),
-            "headers": {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Credentials": True,
-                "Access-Control-Allow-Headers": "authorization,content-type",
-                "Content-Type": "application/json",
-            },
-        }
+        return response_helpers.generate_error_response(
+            500, "An unexpected error has occurred."
+        )
